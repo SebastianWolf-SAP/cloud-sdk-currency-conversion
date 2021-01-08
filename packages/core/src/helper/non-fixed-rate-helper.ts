@@ -10,13 +10,14 @@ import {
   ExchangeRateTypeDetail,
   ExchangeRateValue,
   SingleNonFixedRateConversionResult,
-  TenantSettings
+  TenantSettings,
+  logAndGetError,
+  logger as log
 } from '@sap-cloud-sdk/currency-conversion-models';
 import { isNullish } from '@sap-cloud-sdk/util';
 import { BigNumber } from 'bignumber.js';
 import { ConversionError } from '../constants/conversion-error';
 import { ExchangeRateRecordDeterminer } from '../core/exchange-rate-record-determiner';
-import { logAndGetError, logger as log } from './logger';
 import { configureBigNumber } from './configure-big-number';
 import { validateCurrencyFactor } from './validate-currency-factor';
 
@@ -32,20 +33,20 @@ export const CURR_FORMAT = {
 /*
  * Conversion logic for all the APIs for Non Fixed Rate.
  */
-export function performNonFixedConversion(
+export async function performNonFixedConversion(
   conversionParameters: ConversionParameterForNonFixedRate[],
   dataAdapter: DataAdapter,
   tenant: Tenant,
   overrideTenantSetting?: TenantSettings
-): BulkConversionResult<ConversionParameterForNonFixedRate, SingleNonFixedRateConversionResult> {
+): Promise<BulkConversionResult<ConversionParameterForNonFixedRate, SingleNonFixedRateConversionResult>> {
   if (isNullish(dataAdapter) || isNullish(tenant?.id)) {
     throw new CurrencyConversionError(ConversionError.NULL_ADAPTER_TENANT);
   }
   const tenantSettings = overrideTenantSetting
     ? fetchOverrideTenantSettings(overrideTenantSetting)
-    : fetchDefaultTenantSettings(dataAdapter, tenant);
-  const exchangeRateResultSet = fetchExchangeRate(conversionParameters, dataAdapter, tenant, tenantSettings);
-  const exchangeRateTypeDetailsMap = fetchExchangeRateType(conversionParameters, dataAdapter, tenant);
+    : await fetchDefaultTenantSettings(dataAdapter, tenant);
+  const exchangeRateResultSet = await fetchExchangeRate(conversionParameters, dataAdapter, tenant, tenantSettings);
+  const exchangeRateTypeDetailsMap = await fetchExchangeRateType(conversionParameters, dataAdapter, tenant);
   const exchangeRateDeterminer = new ExchangeRateRecordDeterminer(
     tenant,
     tenantSettings,
@@ -54,19 +55,18 @@ export function performNonFixedConversion(
   );
   return performBulkNonFixedConversion(exchangeRateDeterminer, conversionParameters, tenant);
 }
-
-function fetchExchangeRate(
+async function fetchExchangeRate(
   conversionParameters: ConversionParameterForNonFixedRate[],
   dataAdapter: DataAdapter,
   tenant: Tenant,
   tenantSettings: TenantSettings
-): ExchangeRate[] {
-  let exchangeRates;
-  try {
-    exchangeRates = dataAdapter.getExchangeRatesForTenant(conversionParameters, tenant, tenantSettings);
-  } catch (error) {
-    throw logAndGetError(ConversionError.ERROR_FETCHING_EXCHANGE_RATES);
-  }
+): Promise<ExchangeRate[]> {
+  const exchangeRates = await dataAdapter
+    .getExchangeRatesForTenant(conversionParameters, tenant, tenantSettings)
+    .catch(error => {
+      log.error(error.message);
+      throw logAndGetError(ConversionError.ERROR_FETCHING_EXCHANGE_RATES);
+    });
   if (!exchangeRates?.length) {
     log.error(`Data Adpater returned empty list for exchange rates for tenant ${JSON.stringify(tenant)}`);
     throw new CurrencyConversionError(ConversionError.EMPTY_EXCHANGE_RATE_LIST);
@@ -74,18 +74,18 @@ function fetchExchangeRate(
   return exchangeRates;
 }
 
-function fetchExchangeRateType(
+async function fetchExchangeRateType(
   conversionParameters: ConversionParameterForNonFixedRate[],
   dataAdapter: DataAdapter,
   tenant: Tenant
-): Map<string, ExchangeRateTypeDetail> {
-  let exchangeRateTypeDetailMap;
+): Promise<Map<string, ExchangeRateTypeDetail>> {
   const rateTypes = conversionParameters.map(conversionParameter => conversionParameter.exchangeRateType);
-  try {
-    exchangeRateTypeDetailMap = dataAdapter.getExchangeRateTypeDetailsForTenant(tenant, new Set(rateTypes));
-  } catch (error) {
-    throw logAndGetError(ConversionError.ERROR_FETCHING_EXCHANGE_RATES);
-  }
+  const exchangeRateTypeDetailMap = await dataAdapter
+    .getExchangeRateTypeDetailsForTenant(tenant, rateTypes)
+    .catch(error => {
+      log.error(error.message);
+      throw logAndGetError(ConversionError.ERROR_FETCHING_EXCHANGE_RATES);
+    });
   return exchangeRateTypeDetailMap;
 }
 
@@ -277,20 +277,19 @@ function isRatioNaNOrInfinite(currencyFactorRatio: number): void {
   }
 }
 
-function fetchDefaultTenantSettings(dataAdapter: DataAdapter, tenant: Tenant): TenantSettings {
-  try {
-    const tenantSettingsToBeUsed = dataAdapter.getDefaultSettingsForTenant(tenant);
-    log.debug(
-      'Default Tenant settings returned from data adapter are :',
-      ...(isNullish(tenantSettingsToBeUsed)
-        ? [null, null]
-        : [tenantSettingsToBeUsed.ratesDataProviderCode, tenantSettingsToBeUsed.ratesDataSource])
-    );
-    return tenantSettingsToBeUsed;
-  } catch (ex) {
+async function fetchDefaultTenantSettings(dataAdapter: DataAdapter, tenant: Tenant): Promise<TenantSettings> {
+  const tenantSettingsToBeUsed = await dataAdapter.getDefaultSettingsForTenant(tenant).catch(error => {
+    log.error(error.message);
     log.error(`Error in fetching default tenant settings for tenant ${tenant}`);
     throw new CurrencyConversionError(ConversionError.ERROR_FETCHING_DEFAULT_SETTINGS);
-  }
+  });
+  log.debug(
+    'Default Tenant settings returned from data adapter are :',
+    ...(isNullish(tenantSettingsToBeUsed)
+      ? [null, null]
+      : [tenantSettingsToBeUsed.ratesDataProviderCode, tenantSettingsToBeUsed.ratesDataSource])
+  );
+  return tenantSettingsToBeUsed;
 }
 
 function fetchOverrideTenantSettings(overrideSetting: TenantSettings): TenantSettings {

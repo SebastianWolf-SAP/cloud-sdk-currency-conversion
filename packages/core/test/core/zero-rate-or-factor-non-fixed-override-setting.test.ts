@@ -444,43 +444,48 @@ const currencyConverter: CurrencyConverter = new CurrencyConverter();
 function buildAdapter(exchangeRates: ExchangeRate[]): DataAdapter {
   const adapter: DataAdapter = {} as DataAdapter;
 
-  adapter.getExchangeRatesForTenant = (): ExchangeRate[] => exchangeRates;
+  adapter.getExchangeRatesForTenant = (): Promise<ExchangeRate[]> => Promise.resolve(exchangeRates);
 
-  adapter.getDefaultSettingsForTenant = (): TenantSettings => defaultTenantSettings;
-  adapter.getExchangeRateTypeDetailsForTenant = (): Map<string, ExchangeRateTypeDetail> => new Map();
+  adapter.getDefaultSettingsForTenant = (): Promise<TenantSettings> => Promise.resolve(defaultTenantSettings);
+
+  adapter.getExchangeRateTypeDetailsForTenant = (): Promise<Map<string, ExchangeRateTypeDetail>> =>
+    Promise.resolve(new Map());
   return adapter;
 }
 function buildAdapterWithDataSource(exchangeRates: ExchangeRate[], dataSource: string): DataAdapter {
   const adapter: DataAdapter = {} as DataAdapter;
 
-  adapter.getExchangeRatesForTenant = (): ExchangeRate[] => exchangeRates;
+  adapter.getExchangeRatesForTenant = (): Promise<ExchangeRate[]> => Promise.resolve(exchangeRates);
 
-  adapter.getDefaultSettingsForTenant = (): TenantSettings => ({
+  const tenantSettings = {
     ratesDataProviderCode: MRM,
     ratesDataSource: dataSource
-  });
-  adapter.getExchangeRateTypeDetailsForTenant = (): Map<string, ExchangeRateTypeDetail> => new Map();
+  };
+  adapter.getDefaultSettingsForTenant = (): Promise<TenantSettings> => Promise.resolve(tenantSettings);
+
+  adapter.getExchangeRateTypeDetailsForTenant = (): Promise<Map<string, ExchangeRateTypeDetail>> =>
+    Promise.resolve(new Map());
   return adapter;
 }
 
-describe('Non Fixed Rate -- zero rate or zero factor tests override tenant settings.', () => {
-  it('Test Direct Zero Rate.', () => {
-    const result = currencyConverter
-      .convertCurrenciesWithNonFixedRate(
+describe('Non Fixed Rate -- zero rate or zero factor tests override tenant settings.', async () => {
+  it('Test Direct Zero Rate.', async () => {
+    const result = (
+      await currencyConverter.convertCurrenciesWithNonFixedRate(
         Array.of(inrEurMConversionParam),
         buildAdapter([inrEurMrmThrDirectZeroRate, inrEurMrmEcbDirectZeroRate]),
         TENANT_ID,
         overrideTenantSettings
       )
-      .get(inrEurMConversionParam) as SingleNonFixedRateConversionResult;
+    ).get(inrEurMConversionParam) as SingleNonFixedRateConversionResult;
     expect(result).toBeTruthy();
     expect(result.convertedAmount.decimalValue.toNumber()).toBe(0);
     expect(result.roundedOffConvertedAmount.decimalValue.toString()).toBe('0');
     expect(result.exchangeRate).toMatchObject(inrEurMrmThrDirectZeroRate);
   });
 
-  it('Test Direct Zero to Factor Zero.', () => {
-    const result: SingleNonFixedRateConversionResult = currencyConverter.convertCurrencyWithNonFixedRate(
+  it('Test Direct Zero to Factor Zero.', async () => {
+    const result: SingleNonFixedRateConversionResult = await currencyConverter.convertCurrencyWithNonFixedRate(
       inrEurMConversionParam,
       buildAdapterWithDataSource([inrEurMrmThrDirectZeroToFactorZeroRate, inrEurMrmEcbDirectZeroToFactorZeroRate], ECB),
       TENANT_ID,
@@ -492,52 +497,52 @@ describe('Non Fixed Rate -- zero rate or zero factor tests override tenant setti
     expect(result.exchangeRate).toMatchObject(inrEurMrmThrDirectZeroToFactorZeroRate);
   });
 
-  it('Test Indirect Zero To Factor Rate.', () => {
-    const result = currencyConverter
-      .convertCurrenciesWithNonFixedRate(
+  it('Test Indirect Zero To Factor Rate.', async () => {
+    const result = (
+      await currencyConverter.convertCurrenciesWithNonFixedRate(
         Array.of(inrEurMConversionParam),
         buildAdapterWithDataSource([inrEurMrmThrIndirectZeroToFactorRate, inrEurMrmEcbIndirectZeroToFactorRate], ECB),
         TENANT_ID,
         overrideTenantSettings
       )
-      .get(inrEurMConversionParam) as SingleNonFixedRateConversionResult;
+    ).get(inrEurMConversionParam) as SingleNonFixedRateConversionResult;
     expect(result).toBeTruthy();
     expect(result.convertedAmount.decimalValue.toNumber()).toBe(0);
     expect(result.roundedOffConvertedAmount.decimalValue.toString()).toBe('0');
     expect(result.exchangeRate).toMatchObject(inrEurMrmThrIndirectZeroToFactorRate);
   });
 
-  it('Test Direct Zero To Factor Rate.', () => {
-    const result = currencyConverter
-      .convertCurrenciesWithNonFixedRate(
+  it('Test Direct Zero To Factor Rate.', async () => {
+    const result = (
+      await currencyConverter.convertCurrenciesWithNonFixedRate(
         Array.of(inrEurMConversionParam),
         buildAdapterWithDataSource([inrEurMrmThrDirectZeroToFactorRate, inrEurMrmEcbDirectZeroToFactorRate], ECB),
         TENANT_ID,
         overrideTenantSettings
       )
-      .get(inrEurMConversionParam) as SingleNonFixedRateConversionResult;
+    ).get(inrEurMConversionParam) as SingleNonFixedRateConversionResult;
     expect(result).toBeTruthy();
     expect(result.convertedAmount.decimalValue.toNumber()).toBe(0);
     expect(result.roundedOffConvertedAmount.decimalValue.toString()).toBe('0');
     expect(result.exchangeRate).toMatchObject(inrEurMrmThrDirectZeroToFactorRate);
   });
 
-  it('Test Indirect Zero Rate', () => {
-    const result = currencyConverter
-      .convertCurrenciesWithNonFixedRate(
+  it('Test Indirect Zero Rate', async () => {
+    const result = (
+      await currencyConverter.convertCurrenciesWithNonFixedRate(
         Array.of(inrEurMConversionParam),
         buildAdapterWithDataSource([inrEurMrmThrIndirectZeroRate, inrEurMrmEcbIndirectZeroRate], ECB),
         TENANT_ID,
         overrideTenantSettings
       )
-      .get(inrEurMConversionParam) as SingleNonFixedRateConversionResult;
+    ).get(inrEurMConversionParam) as SingleNonFixedRateConversionResult;
     expect(result).toBeTruthy();
     expect(result).toBeInstanceOf(Error);
   });
 
-  it('Test Indirect Zero Factors Zero Rate.', () => {
-    const result = currencyConverter
-      .convertCurrenciesWithNonFixedRate(
+  it('Test Indirect Zero Factors Zero Rate.', async () => {
+    const result = (
+      await currencyConverter.convertCurrenciesWithNonFixedRate(
         Array.of(inrEurMConversionParam),
         buildAdapterWithDataSource(
           [inrEurMrmThrIndirectZeroFactorsZeroRate, inrEurMrmEcbIndirectZeroFactorsZeroRate],
@@ -546,15 +551,15 @@ describe('Non Fixed Rate -- zero rate or zero factor tests override tenant setti
         TENANT_ID,
         overrideTenantSettings
       )
-      .get(inrEurMConversionParam) as CurrencyConversionError;
+    ).get(inrEurMConversionParam) as CurrencyConversionError;
     expect(result).toBeTruthy();
     expect(result).toBeInstanceOf(Error);
     expect(result.message).toBe(ConversionError.ZERO_CURRENCY_FACTOR);
   });
 
-  it('Test Indirect Zero To Factor Zero Rate.', () => {
-    const result = currencyConverter
-      .convertCurrenciesWithNonFixedRate(
+  it('Test Indirect Zero To Factor Zero Rate.', async () => {
+    const result = (
+      await currencyConverter.convertCurrenciesWithNonFixedRate(
         Array.of(inrEurMConversionParam),
         buildAdapterWithDataSource(
           [inrEurMrmThrIndirectZeroToFactorZeroRate, inrEurMrmEcbIndirectZeroToFactorZeroRate],
@@ -563,14 +568,14 @@ describe('Non Fixed Rate -- zero rate or zero factor tests override tenant setti
         TENANT_ID,
         overrideTenantSettings
       )
-      .get(inrEurMConversionParam) as CurrencyConversionError;
+    ).get(inrEurMConversionParam) as CurrencyConversionError;
     expect(result).toBeTruthy();
     expect(result).toBeInstanceOf(Error);
   });
 
-  it('Test Indirect Zero From Fact Zero Rate.', () => {
-    const result = currencyConverter
-      .convertCurrenciesWithNonFixedRate(
+  it('Test Indirect Zero From Fact Zero Rate.', async () => {
+    const result = (
+      await currencyConverter.convertCurrenciesWithNonFixedRate(
         Array.of(inrEurMConversionParam),
         buildAdapterWithDataSource(
           [inrEurMrmThrIndirectZeroFromFactZeroRate, inrEurMrmEcbIndirectZeroFromFactZeroRate],
@@ -579,29 +584,29 @@ describe('Non Fixed Rate -- zero rate or zero factor tests override tenant setti
         TENANT_ID,
         overrideTenantSettings
       )
-      .get(inrEurMConversionParam) as CurrencyConversionError;
+    ).get(inrEurMConversionParam) as CurrencyConversionError;
     expect(result).toBeTruthy();
     expect(result).toBeInstanceOf(Error);
     expect(result.message).toBe(ConversionError.ZERO_CURRENCY_FACTOR);
   });
 
-  it('Test Direct Zero Factors Zero Rate.', () => {
-    const result = currencyConverter
-      .convertCurrenciesWithNonFixedRate(
+  it('Test Direct Zero Factors Zero Rate.', async () => {
+    const result = (
+      await currencyConverter.convertCurrenciesWithNonFixedRate(
         Array.of(inrEurMConversionParam),
         buildAdapterWithDataSource([inrEurMrmThrDirectZeroFactorsZeroRate, inrEurMrmEcbDirectZeroFactorsZeroRate], ECB),
         TENANT_ID,
         overrideTenantSettings
       )
-      .get(inrEurMConversionParam) as CurrencyConversionError;
+    ).get(inrEurMConversionParam) as CurrencyConversionError;
     expect(result).toBeTruthy();
     expect(result).toBeInstanceOf(Error);
     expect(result.message).toBe(ConversionError.ZERO_CURRENCY_FACTOR);
   });
 
-  it('Test Direct Zero From Fact Zero Rate.', () => {
-    const result = currencyConverter
-      .convertCurrenciesWithNonFixedRate(
+  it('Test Direct Zero From Fact Zero Rate.', async () => {
+    const result = (
+      await currencyConverter.convertCurrenciesWithNonFixedRate(
         Array.of(inrEurMConversionParam),
         buildAdapterWithDataSource(
           [inrEurMrmThrDirectZeroFromFactZeroRate, inrEurMrmEcbDirectZeroFromFactZeroRate],
@@ -610,29 +615,29 @@ describe('Non Fixed Rate -- zero rate or zero factor tests override tenant setti
         TENANT_ID,
         overrideTenantSettings
       )
-      .get(inrEurMConversionParam) as CurrencyConversionError;
+    ).get(inrEurMConversionParam) as CurrencyConversionError;
     expect(result).toBeTruthy();
     expect(result).toBeInstanceOf(Error);
     expect(result.message).toBe(ConversionError.ZERO_CURRENCY_FACTOR);
   });
 
-  it('Test Indirect Zero Factors Rate.', () => {
-    const result = currencyConverter
-      .convertCurrenciesWithNonFixedRate(
+  it('Test Indirect Zero Factors Rate.', async () => {
+    const result = (
+      await currencyConverter.convertCurrenciesWithNonFixedRate(
         Array.of(inrEurMConversionParam),
         buildAdapterWithDataSource([inrEurMrmThrIndirectZeroFactorsRate, inrEurMrmEcbIndirectZeroFactorsRate], ECB),
         TENANT_ID,
         overrideTenantSettings
       )
-      .get(inrEurMConversionParam) as CurrencyConversionError;
+    ).get(inrEurMConversionParam) as CurrencyConversionError;
     expect(result).toBeTruthy();
     expect(result).toBeInstanceOf(Error);
     expect(result.message).toBe(ConversionError.ZERO_CURRENCY_FACTOR);
   });
 
-  it('Test Indirect Zero From Factor Rate.', () => {
-    const result = currencyConverter
-      .convertCurrenciesWithNonFixedRate(
+  it('Test Indirect Zero From Factor Rate.', async () => {
+    const result = (
+      await currencyConverter.convertCurrenciesWithNonFixedRate(
         Array.of(inrEurMConversionParam),
         buildAdapterWithDataSource(
           [inrEurMrmThrIndirectZeroFromFactorRate, inrEurMrmEcbIndirectZeroFromFactorRate],
@@ -641,35 +646,35 @@ describe('Non Fixed Rate -- zero rate or zero factor tests override tenant setti
         TENANT_ID,
         overrideTenantSettings
       )
-      .get(inrEurMConversionParam) as CurrencyConversionError;
+    ).get(inrEurMConversionParam) as CurrencyConversionError;
     expect(result).toBeTruthy();
     expect(result).toBeInstanceOf(Error);
     expect(result.message).toBe(ConversionError.ZERO_CURRENCY_FACTOR);
   });
 
-  it('Test Direct Zero Factors Rate.', () => {
-    const result = currencyConverter
-      .convertCurrenciesWithNonFixedRate(
+  it('Test Direct Zero Factors Rate.', async () => {
+    const result = (
+      await currencyConverter.convertCurrenciesWithNonFixedRate(
         Array.of(inrEurMConversionParam),
         buildAdapterWithDataSource([inrEurMrmThrDirectZeroFactorsRate, inrEurMrmEcbDirectZeroFactorsRate], ECB),
         TENANT_ID,
         overrideTenantSettings
       )
-      .get(inrEurMConversionParam) as CurrencyConversionError;
+    ).get(inrEurMConversionParam) as CurrencyConversionError;
     expect(result).toBeTruthy();
     expect(result).toBeInstanceOf(Error);
     expect(result.message).toBe(ConversionError.ZERO_CURRENCY_FACTOR);
   });
 
-  it('Test Direct Zero From Factor Rate.', () => {
-    const result = currencyConverter
-      .convertCurrenciesWithNonFixedRate(
+  it('Test Direct Zero From Factor Rate.', async () => {
+    const result = (
+      await currencyConverter.convertCurrenciesWithNonFixedRate(
         Array.of(inrEurMConversionParam),
         buildAdapterWithDataSource([inrEurMrmThrDirectZeroFromFactorRate, inrEurMrmEcbDirectZeroFromFactorRate], ECB),
         TENANT_ID,
         overrideTenantSettings
       )
-      .get(inrEurMConversionParam) as CurrencyConversionError;
+    ).get(inrEurMConversionParam) as CurrencyConversionError;
     expect(result).toBeTruthy();
     expect(result).toBeInstanceOf(Error);
     expect(result.message).toBe(ConversionError.ZERO_CURRENCY_FACTOR);

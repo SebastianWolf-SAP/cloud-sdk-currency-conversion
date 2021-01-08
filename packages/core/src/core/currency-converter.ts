@@ -7,11 +7,12 @@ import {
   ConversionParameterForNonFixedRate,
   DataAdapter,
   SingleNonFixedRateConversionResult,
-  TenantSettings
+  TenantSettings,
+  logAndGetError,
+  logger as log
 } from '@sap-cloud-sdk/currency-conversion-models';
 import { isNullish } from '@sap-cloud-sdk/util';
 import { ConversionParameter } from '@sap-cloud-sdk/currency-conversion-models/src/conversion-parameter';
-import { logger as log, logAndGetError } from '../helper/logger';
 import { ConversionError } from '../constants/conversion-error';
 import { performNonFixedConversion } from '../helper/non-fixed-rate-helper';
 import { performSingleFixedConversion } from '../helper/fixed-rate-helper';
@@ -141,16 +142,16 @@ export class CurrencyConverter {
    * @returns {SingleNonFixedRateConversionResult}:
    * The single conversion result for a non-fixed rate.
    */
-  public convertCurrencyWithNonFixedRate(
+  public async convertCurrencyWithNonFixedRate(
     conversionParameter: ConversionParameterForNonFixedRate,
     adapter: DataAdapter,
     tenant: Tenant,
     overrideTenantSetting?: TenantSettings
-  ): SingleNonFixedRateConversionResult {
+  ): Promise<SingleNonFixedRateConversionResult> {
     if (!this.validateSingleConversionParameter(conversionParameter)) {
       throw logAndGetError(ConversionError.INVALID_PARAMS);
     }
-    const bulkConversionResult = performNonFixedConversion(
+    const bulkConversionResult = await performNonFixedConversion(
       Array.of(conversionParameter),
       adapter,
       tenant,
@@ -204,12 +205,12 @@ export class CurrencyConverter {
    * @returns {BulkNonFixedRateConversionResult}:
    * The conversion result for a non-fixed rate.
    */
-  public convertCurrenciesWithNonFixedRate(
+  public async convertCurrenciesWithNonFixedRate(
     conversionParameters: ConversionParameterForNonFixedRate[],
     adapter: DataAdapter,
     tenant: Tenant,
     overrideTenantSetting?: TenantSettings
-  ): BulkConversionResult<ConversionParameterForNonFixedRate, SingleNonFixedRateConversionResult> {
+  ): Promise<BulkConversionResult<ConversionParameterForNonFixedRate, SingleNonFixedRateConversionResult>> {
     if (!this.validateBulkConversionParameters(conversionParameters)) {
       throw logAndGetError(ConversionError.INVALID_PARAMS);
     }

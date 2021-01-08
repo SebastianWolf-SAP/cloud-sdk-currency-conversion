@@ -293,13 +293,15 @@ function buildAdapter(exchangeRates: ExchangeRate[]): DataAdapter {
     params: ConversionParameterForNonFixedRate[],
     tenant: Tenant,
     tenantSettings: TenantSettings
-  ): ExchangeRate[] => exchangeRates;
+  ): Promise<ExchangeRate[]> => Promise.resolve(exchangeRates);
 
-  adapter.getDefaultSettingsForTenant = (tenant: Tenant): TenantSettings => defaultTenantSettings;
+  adapter.getDefaultSettingsForTenant = (tenant: Tenant): Promise<TenantSettings> =>
+    Promise.resolve(defaultTenantSettings);
+
   adapter.getExchangeRateTypeDetailsForTenant = (
     tenant: Tenant,
-    rateTypeSet: Set<string>
-  ): Map<string, ExchangeRateTypeDetail> => new Map();
+    rateTypeSet: string[]
+  ): Promise<Map<string, ExchangeRateTypeDetail>> => Promise.resolve(new Map());
   return adapter;
 }
 
@@ -310,16 +312,18 @@ function buildAdapterThrowsExcpetion(exchangeRates: ExchangeRate[]): DataAdapter
     params: ConversionParameterForNonFixedRate[],
     tenant: Tenant,
     tenantSettings: TenantSettings
-  ): ExchangeRate[] => {
+  ): Promise<ExchangeRate[]> => {
     throw new CurrencyConversionError('Data Adapter Exceptions.');
-    return exchangeRates;
+    return Promise.resolve(exchangeRates);
   };
 
-  adapter.getDefaultSettingsForTenant = (tenant: Tenant): TenantSettings => defaultTenantSettings;
+  adapter.getDefaultSettingsForTenant = (tenant: Tenant): Promise<TenantSettings> =>
+    Promise.resolve(defaultTenantSettings);
+
   adapter.getExchangeRateTypeDetailsForTenant = (
     tenant: Tenant,
-    rateTypeSet: Set<string>
-  ): Map<string, ExchangeRateTypeDetail> => new Map();
+    rateTypeSet: string[]
+  ): Promise<Map<string, ExchangeRateTypeDetail>> => Promise.resolve(new Map());
   return adapter;
 }
 
@@ -330,18 +334,19 @@ function buildAdapterTSNull(exchangeRates: ExchangeRate[]): DataAdapter {
     params: ConversionParameterForNonFixedRate[],
     tenant: Tenant,
     tenantSettings: TenantSettings
-  ): ExchangeRate[] => exchangeRates;
+  ): Promise<ExchangeRate[]> => Promise.resolve(exchangeRates);
 
-  adapter.getDefaultSettingsForTenant = (tenant: Tenant): TenantSettings => [][0];
+  adapter.getDefaultSettingsForTenant = (tenant: Tenant): Promise<TenantSettings> => Promise.resolve(new Array()[0]);
+
   adapter.getExchangeRateTypeDetailsForTenant = (
     tenant: Tenant,
-    rateTypeSet: Set<string>
-  ): Map<string, ExchangeRateTypeDetail> => new Map();
+    rateTypeSet: string[]
+  ): Promise<Map<string, ExchangeRateTypeDetail>> => Promise.resolve(new Map());
   return adapter;
 }
 describe('Non Fixed Rate -- Single Currency Conversoin Tests Positive.', () => {
-  it('Test Direct Conversion Decimal Value.', () => {
-    const result: SingleNonFixedRateConversionResult = currencyConverter.convertCurrencyWithNonFixedRate(
+  it('Test Direct Conversion Decimal Value.', async () => {
+    const result: SingleNonFixedRateConversionResult = await currencyConverter.convertCurrencyWithNonFixedRate(
       eurInrDecimalValueConversionParam,
       buildAdapter([
         eurInrMrmEcbDirectConversionDecimal,
@@ -357,8 +362,8 @@ describe('Non Fixed Rate -- Single Currency Conversoin Tests Positive.', () => {
     expect(result.exchangeRate.ratesDataSource).toBe('ECB');
   });
 
-  it('Test Direct Conversion Exponent Three.', () => {
-    const result: SingleNonFixedRateConversionResult = currencyConverter.convertCurrencyWithNonFixedRate(
+  it('Test Direct Conversion Exponent Three.', async () => {
+    const result: SingleNonFixedRateConversionResult = await currencyConverter.convertCurrencyWithNonFixedRate(
       usdBhdMConversionParam,
       buildAdapter([usdBhdMrmEcbMRate]),
       TENANT_ID
@@ -368,8 +373,8 @@ describe('Non Fixed Rate -- Single Currency Conversoin Tests Positive.', () => {
     expect(result.exchangeRate.ratesDataSource).toBe('ECB');
   });
 
-  it('Test Direct Conversion Rounded Off Value Exponent Four.', () => {
-    const result: SingleNonFixedRateConversionResult = currencyConverter.convertCurrencyWithNonFixedRate(
+  it('Test Direct Conversion Rounded Off Value Exponent Four.', async () => {
+    const result: SingleNonFixedRateConversionResult = await currencyConverter.convertCurrencyWithNonFixedRate(
       usdClfMConversionParam,
       buildAdapter([usdClfMrmEcbMRate]),
       TENANT_ID
@@ -379,8 +384,8 @@ describe('Non Fixed Rate -- Single Currency Conversoin Tests Positive.', () => {
     expect(result.exchangeRate.ratesDataSource).toBe('ECB');
   });
 
-  it('Test Direct Conversion Rounded Halfup Last Digit Five.', () => {
-    const result: SingleNonFixedRateConversionResult = currencyConverter.convertCurrencyWithNonFixedRate(
+  it('Test Direct Conversion Rounded Halfup Last Digit Five.', async () => {
+    const result: SingleNonFixedRateConversionResult = await currencyConverter.convertCurrencyWithNonFixedRate(
       inrBhdMFiveParam,
       buildAdapter([inrBhdMrmEcbMRate]),
       TENANT_ID
@@ -394,8 +399,8 @@ describe('Non Fixed Rate -- Single Currency Conversoin Tests Positive.', () => {
     expect(result.exchangeRate.ratesDataSource).toBe('ECB');
   });
 
-  it('Test Direct Conversion Rounded Halfup Last Digit More Than Five.', () => {
-    const result: SingleNonFixedRateConversionResult = currencyConverter.convertCurrencyWithNonFixedRate(
+  it('Test Direct Conversion Rounded Halfup Last Digit More Than Five.', async () => {
+    const result: SingleNonFixedRateConversionResult = await currencyConverter.convertCurrencyWithNonFixedRate(
       inrBhdMMoreThanFiveParam,
       buildAdapter([inrBhdMrmEcbMRate]),
       TENANT_ID
@@ -407,8 +412,8 @@ describe('Non Fixed Rate -- Single Currency Conversoin Tests Positive.', () => {
     expect(result.exchangeRate.ratesDataSource).toBe('ECB');
   });
 
-  it('Test Direct Conversion With Empty Exchange RateType Details.', () => {
-    const result: SingleNonFixedRateConversionResult = currencyConverter.convertCurrencyWithNonFixedRate(
+  it('Test Direct Conversion With Empty Exchange RateType Details.', async () => {
+    const result: SingleNonFixedRateConversionResult = await currencyConverter.convertCurrencyWithNonFixedRate(
       inrEurMConversionParam,
       buildAdapter([
         inrEurMrmEcbMRate,
@@ -429,89 +434,86 @@ describe('Non Fixed Rate -- Single Currency Conversoin Tests Positive.', () => {
     expect(result.roundedOffConvertedAmount.valueString).toBe('10000');
     expect(result.exchangeRate.ratesDataSource).toBe('ECB');
   });
-});
-
-describe('Non Fixed Rate -- Single Currency Conversoin Tests Negative.', () => {
-  it('Test Single Conversion With Exchange Rat eRecord Having Future Date', () => {
-    expect(() =>
+  it('Test Single Conversion With Exchange Rat eRecord Having Future Date', async () => {
+    await expect(
       currencyConverter.convertCurrencyWithNonFixedRate(
         inrEurMConversionParamPastDate,
         buildAdapter([eurInrMrmThrMRate, inrEurMrmEcbMRate, eurInrMrmEcbMRate]),
         TENANT_ID
       )
-    ).toThrowError();
+    ).rejects.toThrowError();
   });
 
-  it('Test Single Conversion With Null Conversion Params', () => {
-    const temp: ConversionParameterForNonFixedRate[] = [];
-    expect(() =>
+  it('Test Single Conversion With Null Conversion Params', async () => {
+    const temp: ConversionParameterForNonFixedRate[] = new Array();
+    await expect(
       currencyConverter.convertCurrencyWithNonFixedRate(
         temp[0],
         buildAdapter([eurInrMrmThrMRate, inrEurMrmEcbMRate, eurInrMrmEcbMRate]),
         TENANT_ID
       )
-    ).toThrowError();
+    ).rejects.toThrowError();
   });
 
-  it('Test Single Conversion With Empty Exchange Rates.', () => {
-    const temp: ExchangeRate[] = [];
-    expect(() =>
+  it('Test Single Conversion With Empty Exchange Rates.', async () => {
+    const temp: ExchangeRate[] = new Array();
+    await expect(
       currencyConverter.convertCurrencyWithNonFixedRate(inrEurMConversionParamPastDate, buildAdapter(temp), TENANT_ID)
-    ).toThrowError();
+    ).rejects.toThrowError();
   });
-  it('Test Single Conversion With ExchangeRates Throws DataAdapterException.', () => {
-    const temp: ExchangeRate[] = [];
-    expect(() =>
+  it('Test Single Conversion With ExchangeRates Throws DataAdapterException.', async () => {
+    const temp: ExchangeRate[] = new Array();
+    await expect(
       currencyConverter.convertCurrencyWithNonFixedRate(
         inrEurMConversionParamPastDate,
         buildAdapterThrowsExcpetion(temp),
         TENANT_ID
       )
-    ).toThrowError();
+    ).rejects.toThrowError();
   });
-  it('Test Single Conversion With Duplicate Exchange Rate Same TimeStamp', () => {
-    expect(() =>
+  it('Test Single Conversion With Duplicate Exchange Rate Same TimeStamp', async () => {
+    await expect(
       currencyConverter.convertCurrencyWithNonFixedRate(
         inrEurMConversionParam,
         buildAdapter([inrEurMrmEcbMDuplicateRate, inrEurMrmEcbMRate]),
         TENANT_ID
       )
-    ).toThrowError();
+    ).rejects.toThrowError();
   });
-  it('Test Single Conversion With Duplicate Record.', () => {
-    expect(() =>
+  it('Test Single Conversion With Duplicate Record.', async () => {
+    await expect(
       currencyConverter.convertCurrencyWithNonFixedRate(
         inrEurMConversionParam,
         buildAdapter([inrEurMrmEcbMDuplicateRate, inrEurMrmEcbMRate]),
         TENANT_ID
       )
-    ).toThrowError();
+    ).rejects.toThrowError();
   });
-  it('Test Single Conversion With No Record Found', () => {
-    expect(() =>
+  it('Test Single Conversion With No Record Found', async () => {
+    await expect(
       currencyConverter.convertCurrencyWithNonFixedRate(
         inrEurMConversionParam,
         buildAdapter([eurInrMrmThrMRate, eurInrMrmEcbMDuplicateRate]),
         TENANT_ID
       )
-    ).toThrowError();
+    ).rejects.toThrowError();
   });
-  it('Test Single Conversion With Data Adapter Null', () => {
-    const temp: DataAdapter[] = [];
-    expect(() =>
+  it('Test Single Conversion With Data Adapter Null', async () => {
+    const temp: DataAdapter[] = new Array();
+    await expect(
       currencyConverter.convertCurrencyWithNonFixedRate(inrEurMConversionParam, temp[0], TENANT_ID)
-    ).toThrowError();
+    ).rejects.toThrowError();
   });
-  it('Test Single Conversion With Exchange Rates Null', () => {
-    const temp: ExchangeRate[] = [];
-    expect(() =>
+  it('Test Single Conversion With Exchange Rates Null', async () => {
+    const temp: ExchangeRate[] = new Array();
+    await expect(
       currencyConverter.convertCurrencyWithNonFixedRate(inrEurMConversionParam, buildAdapter(temp), TENANT_ID)
-    ).toThrowError();
+    ).rejects.toThrowError();
   });
-  it('Test Single Conversion With Exchange Rates And Default TS Null', () => {
-    const temp: ExchangeRate[] = [];
-    expect(() =>
+  it('Test Single Conversion With Exchange Rates And Default TS Null', async () => {
+    const temp: ExchangeRate[] = new Array();
+    await expect(
       currencyConverter.convertCurrencyWithNonFixedRate(inrEurMConversionParam, buildAdapterTSNull(temp), TENANT_ID)
-    ).toThrowError();
+    ).rejects.toThrowError();
   });
 });

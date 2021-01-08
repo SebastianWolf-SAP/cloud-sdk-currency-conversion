@@ -323,29 +323,31 @@ function buildAdapter(exchangeRates: ExchangeRate[]): DataAdapter {
     params: ConversionParameterForNonFixedRate[],
     tenant: Tenant,
     tenantSettings: TenantSettings
-  ): ExchangeRate[] => exchangeRates;
+  ): Promise<ExchangeRate[]> => Promise.resolve(exchangeRates);
 
-  adapter.getDefaultSettingsForTenant = (tenant: Tenant): TenantSettings => defaultTenantSettings;
+  adapter.getDefaultSettingsForTenant = (tenant: Tenant): Promise<TenantSettings> =>
+    Promise.resolve(defaultTenantSettings);
+
   adapter.getExchangeRateTypeDetailsForTenant = (
     tenant: Tenant,
-    rateTypeSet: Set<string>
-  ): Map<string, ExchangeRateTypeDetail> => {
+    rateTypeSet: string[]
+  ): Promise<Map<string, ExchangeRateTypeDetail>> => {
     const exchangeRateTypeDetailMap: Map<string, ExchangeRateTypeDetail> = new Map();
     exchangeRateTypeDetailMap.set(B, new ExchangeRateTypeDetail(null as any, false));
     exchangeRateTypeDetailMap.set(M, new ExchangeRateTypeDetail(null as any, true));
-    return exchangeRateTypeDetailMap;
+    return Promise.resolve(exchangeRateTypeDetailMap);
   };
   return adapter;
 }
 
 describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', () => {
-  it('Inverted Single Conversion With Inverted Currency Pair', () => {
+  it('Inverted Single Conversion With Inverted Currency Pair', async () => {
     const expectedConversionResult: SingleNonFixedRateConversionResult = new SingleNonFixedRateConversionResult(
       eurUsdMrmEcbIndirectFalseInvertedTrueRate,
       S_1,
       S_1
     );
-    const result: SingleNonFixedRateConversionResult = currencyConverter.convertCurrencyWithNonFixedRate(
+    const result: SingleNonFixedRateConversionResult = await currencyConverter.convertCurrencyWithNonFixedRate(
       usdEurMConversionParam,
       buildAdapter([eurUsdMrmEcbIndirectFalseInvertedTrueRate]),
       TENANT_ID
@@ -354,13 +356,13 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     expect(result).toEqual(expectedConversionResult);
   });
 
-  it('Inverted Single Conversion With Direct Currency Pair', () => {
+  it('Inverted Single Conversion With Direct Currency Pair', async () => {
     const expectedConversionResult: SingleNonFixedRateConversionResult = new SingleNonFixedRateConversionResult(
       usdEurMrmEcbIndirectFalseInvertedTrueRate,
       S_10000,
       S_10000
     );
-    const result: SingleNonFixedRateConversionResult = currencyConverter.convertCurrencyWithNonFixedRate(
+    const result: SingleNonFixedRateConversionResult = await currencyConverter.convertCurrencyWithNonFixedRate(
       usdEurMConversionParam,
       buildAdapter([eurUsdMrmEcbIndirectFalseInvertedTrueRate, usdEurMrmEcbIndirectFalseInvertedTrueRate]),
       TENANT_ID
@@ -369,7 +371,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     expect(result).toEqual(expectedConversionResult);
   });
 
-  it('Inverted Bulk Conversion With Inverted Currency Pair', () => {
+  it('Inverted Bulk Conversion With Inverted Currency Pair', async () => {
     const expectedConversionResult: SingleNonFixedRateConversionResult = new SingleNonFixedRateConversionResult(
       eurUsdMrmEcbIndirectFalseInvertedTrueRate,
       S_1,
@@ -378,7 +380,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     const result: BulkConversionResult<
       ConversionParameterForNonFixedRate,
       SingleNonFixedRateConversionResult
-    > = currencyConverter.convertCurrenciesWithNonFixedRate(
+    > = await currencyConverter.convertCurrenciesWithNonFixedRate(
       [usdEurMConversionParam],
       buildAdapter([eurUsdMrmEcbIndirectFalseInvertedTrueRate]),
       TENANT_ID
@@ -387,7 +389,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     expect(result.get(usdEurMConversionParam)).toEqual(expectedConversionResult);
   });
 
-  it('Inverted Bulk Conversion With Direct Currency Pair', () => {
+  it('Inverted Bulk Conversion With Direct Currency Pair', async () => {
     const expectedConversionResult: SingleNonFixedRateConversionResult = new SingleNonFixedRateConversionResult(
       usdEurMrmEcbIndirectFalseInvertedTrueRate,
       S_10000,
@@ -396,7 +398,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     const result: BulkConversionResult<
       ConversionParameterForNonFixedRate,
       SingleNonFixedRateConversionResult
-    > = currencyConverter.convertCurrenciesWithNonFixedRate(
+    > = await currencyConverter.convertCurrenciesWithNonFixedRate(
       [usdEurMConversionParam],
       buildAdapter([eurUsdMrmEcbIndirectFalseInvertedTrueRate, usdEurMrmEcbIndirectFalseInvertedTrueRate]),
       TENANT_ID
@@ -405,11 +407,11 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     expect(result.get(usdEurMConversionParam)).toEqual(expectedConversionResult);
   });
 
-  it('Conversion With Exchange Rate Record Having Future Date', () => {
+  it('Conversion With Exchange Rate Record Having Future Date', async () => {
     const result: BulkConversionResult<
       ConversionParameterForNonFixedRate,
       SingleNonFixedRateConversionResult
-    > = currencyConverter.convertCurrenciesWithNonFixedRate(
+    > = await currencyConverter.convertCurrenciesWithNonFixedRate(
       [usdEurBConversionParamPastDate],
       buildAdapter([eurUsdMrmEcbIndirectFalseInvertedTrueRate]),
       TENANT_ID
@@ -420,7 +422,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     );
   });
 
-  it('Inverted Conversion With New Exchange Rate Type', () => {
+  it('Inverted Conversion With New Exchange Rate Type', async () => {
     const expectedConversionResult: SingleNonFixedRateConversionResult = new SingleNonFixedRateConversionResult(
       eurUsdMrmEcbNewRateType,
       S_10000,
@@ -429,7 +431,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     const result: BulkConversionResult<
       ConversionParameterForNonFixedRate,
       SingleNonFixedRateConversionResult
-    > = currencyConverter.convertCurrenciesWithNonFixedRate(
+    > = await currencyConverter.convertCurrenciesWithNonFixedRate(
       [eurUsdMrmEcbABCConversionParam],
       buildAdapter([eurUsdMrmEcbNewRateType]),
       TENANT_ID
@@ -438,7 +440,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     expect(result.get(eurUsdMrmEcbABCConversionParam)).toEqual(expectedConversionResult);
   });
 
-  it('Conversion For Indirect True Inverted True Inverted Currency Pair', () => {
+  it('Conversion For Indirect True Inverted True Inverted Currency Pair', async () => {
     const expectedConversionResult: SingleNonFixedRateConversionResult = new SingleNonFixedRateConversionResult(
       eurUsdMrmEcbIndirectTrueInvertedTrueRate,
       S_10000,
@@ -447,7 +449,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     const result: BulkConversionResult<
       ConversionParameterForNonFixedRate,
       SingleNonFixedRateConversionResult
-    > = currencyConverter.convertCurrenciesWithNonFixedRate(
+    > = await currencyConverter.convertCurrenciesWithNonFixedRate(
       [usdEurMConversionParam],
       buildAdapter([eurUsdMrmEcbIndirectTrueInvertedTrueRate]),
       TENANT_ID
@@ -456,11 +458,11 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     expect(result.get(usdEurMConversionParam)).toEqual(expectedConversionResult);
   });
 
-  it('Conversion For Indirect True Inverted False Inverted Currency Pair', () => {
+  it('Conversion For Indirect True Inverted False Inverted Currency Pair', async () => {
     const result: BulkConversionResult<
       ConversionParameterForNonFixedRate,
       SingleNonFixedRateConversionResult
-    > = currencyConverter.convertCurrenciesWithNonFixedRate(
+    > = await currencyConverter.convertCurrenciesWithNonFixedRate(
       [usdEurBConversionParam],
       buildAdapter([eurUsdMrmEcbIndirectTrueInvertedFalseRate]),
       TENANT_ID
@@ -471,7 +473,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     );
   });
 
-  it('Conversion For Indirect False Inverted True Inverted Currency Pair', () => {
+  it('Conversion For Indirect False Inverted True Inverted Currency Pair', async () => {
     const expectedConversionResult: SingleNonFixedRateConversionResult = new SingleNonFixedRateConversionResult(
       eurUsdMrmEcbIndirectFalseInvertedTrueRate,
       S_1,
@@ -480,7 +482,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     const result: BulkConversionResult<
       ConversionParameterForNonFixedRate,
       SingleNonFixedRateConversionResult
-    > = currencyConverter.convertCurrenciesWithNonFixedRate(
+    > = await currencyConverter.convertCurrenciesWithNonFixedRate(
       [usdEurMConversionParam],
       buildAdapter([eurUsdMrmEcbIndirectFalseInvertedTrueRate]),
       TENANT_ID
@@ -489,11 +491,11 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     expect(result.get(usdEurMConversionParam)).toEqual(expectedConversionResult);
   });
 
-  it('Conversion For Indirect False Inverted False Inverted Currency Pair', () => {
+  it('Conversion For Indirect False Inverted False Inverted Currency Pair', async () => {
     const result: BulkConversionResult<
       ConversionParameterForNonFixedRate,
       SingleNonFixedRateConversionResult
-    > = currencyConverter.convertCurrenciesWithNonFixedRate(
+    > = await currencyConverter.convertCurrenciesWithNonFixedRate(
       [usdEurBConversionParam],
       buildAdapter([eurUsdMrmEcbIndirectFalseInvertedFalseRate]),
       TENANT_ID
@@ -504,7 +506,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     );
   });
 
-  it('Conversion For Indirect True Inverted True Inverted Currency Pair Factor More Than One Rate', () => {
+  it('Conversion For Indirect True Inverted True Inverted Currency Pair Factor More Than One Rate', async () => {
     const expectedConversionResult: SingleNonFixedRateConversionResult = new SingleNonFixedRateConversionResult(
       eurUsdMrmEcbIndirectTrueInvertedTrueFactorMoreThanOneRate,
       S_300,
@@ -513,7 +515,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     const result: BulkConversionResult<
       ConversionParameterForNonFixedRate,
       SingleNonFixedRateConversionResult
-    > = currencyConverter.convertCurrenciesWithNonFixedRate(
+    > = await currencyConverter.convertCurrenciesWithNonFixedRate(
       [usdEurMConversionParam],
       buildAdapter([eurUsdMrmEcbIndirectTrueInvertedTrueFactorMoreThanOneRate]),
       TENANT_ID
@@ -522,7 +524,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     expect(result.get(usdEurMConversionParam)).toEqual(expectedConversionResult);
   });
 
-  it('Conversion For Indirect False Inverted True Inverted Currency Pair Factor More Than One Rate', () => {
+  it('Conversion For Indirect False Inverted True Inverted Currency Pair Factor More Than One Rate', async () => {
     const expectedConversionResult: SingleNonFixedRateConversionResult = new SingleNonFixedRateConversionResult(
       eurUsdMrmEcbIndirectFalseInvertedTrueFactorMoreThanOneRate,
       S_0_333333333333,
@@ -531,7 +533,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     const result: BulkConversionResult<
       ConversionParameterForNonFixedRate,
       SingleNonFixedRateConversionResult
-    > = currencyConverter.convertCurrenciesWithNonFixedRate(
+    > = await currencyConverter.convertCurrenciesWithNonFixedRate(
       [usdEurMConversionParam],
       buildAdapter([eurUsdMrmEcbIndirectFalseInvertedTrueFactorMoreThanOneRate]),
       TENANT_ID
@@ -540,11 +542,11 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     expect(result.get(usdEurMConversionParam)).toEqual(expectedConversionResult);
   });
 
-  it('Conversion For Indirect False Inverted False Inverted Currency Pair Factor More Than One Rate', () => {
+  it('Conversion For Indirect False Inverted False Inverted Currency Pair Factor More Than One Rate', async () => {
     const result: BulkConversionResult<
       ConversionParameterForNonFixedRate,
       SingleNonFixedRateConversionResult
-    > = currencyConverter.convertCurrenciesWithNonFixedRate(
+    > = await currencyConverter.convertCurrenciesWithNonFixedRate(
       [usdEurBConversionParam],
       buildAdapter([eurUsdMrmEcbIndirectFalseInvertedFalseFactorMoreThanOneRate]),
       TENANT_ID
@@ -555,7 +557,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     );
   });
 
-  it('Conversion For Indirect True Inverted True Direct Currency Pair', () => {
+  it('Conversion For Indirect True Inverted True Direct Currency Pair', async () => {
     const expectedConversionResult: SingleNonFixedRateConversionResult = new SingleNonFixedRateConversionResult(
       usdEurMrmEcbIndirectTrueInvertedTrueRate,
       S_1,
@@ -564,7 +566,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     const result: BulkConversionResult<
       ConversionParameterForNonFixedRate,
       SingleNonFixedRateConversionResult
-    > = currencyConverter.convertCurrenciesWithNonFixedRate(
+    > = await currencyConverter.convertCurrenciesWithNonFixedRate(
       [usdEurMConversionParam],
       buildAdapter([usdEurMrmEcbIndirectTrueInvertedTrueRate, eurUsdMrmEcbIndirectTrueInvertedTrueRate]),
       TENANT_ID
@@ -573,7 +575,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     expect(result.get(usdEurMConversionParam)).toEqual(expectedConversionResult);
   });
 
-  it('Conversion For Indirect True Inverted False Direct Currency Pair', () => {
+  it('Conversion For Indirect True Inverted False Direct Currency Pair', async () => {
     const expectedConversionResult: SingleNonFixedRateConversionResult = new SingleNonFixedRateConversionResult(
       usdEurMrmEcbIndirectTrueInvertedFalseRate,
       S_1,
@@ -582,7 +584,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     const result: BulkConversionResult<
       ConversionParameterForNonFixedRate,
       SingleNonFixedRateConversionResult
-    > = currencyConverter.convertCurrenciesWithNonFixedRate(
+    > = await currencyConverter.convertCurrenciesWithNonFixedRate(
       [usdEurBConversionParam],
       buildAdapter([usdEurMrmEcbIndirectTrueInvertedFalseRate, eurUsdMrmEcbIndirectTrueInvertedFalseRate]),
       TENANT_ID
@@ -591,7 +593,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     expect(result.get(usdEurBConversionParam)).toEqual(expectedConversionResult);
   });
 
-  it('Conversion For Indirect False Inverted True Direct Currency Pair', () => {
+  it('Conversion For Indirect False Inverted True Direct Currency Pair', async () => {
     const expectedConversionResult: SingleNonFixedRateConversionResult = new SingleNonFixedRateConversionResult(
       usdEurMrmEcbIndirectFalseInvertedTrueRate,
       S_10000,
@@ -600,7 +602,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     const result: BulkConversionResult<
       ConversionParameterForNonFixedRate,
       SingleNonFixedRateConversionResult
-    > = currencyConverter.convertCurrenciesWithNonFixedRate(
+    > = await currencyConverter.convertCurrenciesWithNonFixedRate(
       [usdEurMConversionParam],
       buildAdapter([usdEurMrmEcbIndirectFalseInvertedTrueRate, eurUsdMrmEcbIndirectFalseInvertedTrueRate]),
       TENANT_ID
@@ -609,7 +611,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     expect(result.get(usdEurMConversionParam)).toEqual(expectedConversionResult);
   });
 
-  it('Conversion For Indirect False Inverted False Direct Currency Pair', () => {
+  it('Conversion For Indirect False Inverted False Direct Currency Pair', async () => {
     const expectedConversionResult: SingleNonFixedRateConversionResult = new SingleNonFixedRateConversionResult(
       usdEurMrmEcbIndirectFalseInvertedFalseRate,
       S_10000,
@@ -618,7 +620,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     const result: BulkConversionResult<
       ConversionParameterForNonFixedRate,
       SingleNonFixedRateConversionResult
-    > = currencyConverter.convertCurrenciesWithNonFixedRate(
+    > = await currencyConverter.convertCurrenciesWithNonFixedRate(
       [usdEurBConversionParam],
       buildAdapter([usdEurMrmEcbIndirectFalseInvertedFalseRate, eurUsdMrmEcbIndirectFalseInvertedFalseRate]),
       TENANT_ID
@@ -627,7 +629,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     expect(result.get(usdEurBConversionParam)).toEqual(expectedConversionResult);
   });
 
-  it('Conversion For Indirect True Inverted True Direct Currency Pair Factor More Than One Rate', () => {
+  it('Conversion For Indirect True Inverted True Direct Currency Pair Factor More Than One Rate', async () => {
     const expectedConversionResult: SingleNonFixedRateConversionResult = new SingleNonFixedRateConversionResult(
       usdEurMrmEcbIndirectTrueInvertedTrueFactorMoreThanOneRate,
       S_50,
@@ -636,7 +638,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     const result: BulkConversionResult<
       ConversionParameterForNonFixedRate,
       SingleNonFixedRateConversionResult
-    > = currencyConverter.convertCurrenciesWithNonFixedRate(
+    > = await currencyConverter.convertCurrenciesWithNonFixedRate(
       [usdEurMConversionParam],
       buildAdapter([
         usdEurMrmEcbIndirectTrueInvertedTrueFactorMoreThanOneRate,
@@ -648,7 +650,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     expect(result.get(usdEurMConversionParam)).toEqual(expectedConversionResult);
   });
 
-  it('Conversion For Indirect True Inverted False Direct Currency Pair Factor More Than One Rate', () => {
+  it('Conversion For Indirect True Inverted False Direct Currency Pair Factor More Than One Rate', async () => {
     const expectedConversionResult: SingleNonFixedRateConversionResult = new SingleNonFixedRateConversionResult(
       usdEurMrmEcbIndirectTrueInvertedFalseFactorMoreThanOneRate,
       S_50,
@@ -657,7 +659,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     const result: BulkConversionResult<
       ConversionParameterForNonFixedRate,
       SingleNonFixedRateConversionResult
-    > = currencyConverter.convertCurrenciesWithNonFixedRate(
+    > = await currencyConverter.convertCurrenciesWithNonFixedRate(
       [usdEurBConversionParam],
       buildAdapter([
         usdEurMrmEcbIndirectTrueInvertedFalseFactorMoreThanOneRate,
@@ -669,7 +671,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     expect(result.get(usdEurBConversionParam)).toEqual(expectedConversionResult);
   });
 
-  it('Conversion For Indirect False Inverted True Direct Currency Pair Factor More Than One Rate', () => {
+  it('Conversion For Indirect False Inverted True Direct Currency Pair Factor More Than One Rate', async () => {
     const expectedConversionResult: SingleNonFixedRateConversionResult = new SingleNonFixedRateConversionResult(
       usdEurMrmEcbIndirectFalseInvertedTrueFactorMoreThanOneRate,
       S_20000,
@@ -678,7 +680,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     const result: BulkConversionResult<
       ConversionParameterForNonFixedRate,
       SingleNonFixedRateConversionResult
-    > = currencyConverter.convertCurrenciesWithNonFixedRate(
+    > = await currencyConverter.convertCurrenciesWithNonFixedRate(
       [usdEurMConversionParam],
       buildAdapter([
         usdEurMrmEcbIndirectFalseInvertedTrueFactorMoreThanOneRate,
@@ -690,7 +692,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     expect(result.get(usdEurMConversionParam)).toEqual(expectedConversionResult);
   });
 
-  it('Conversion For Indirect False Inverted False Direct Currency Pair Factor More Than One Rate', () => {
+  it('Conversion For Indirect False Inverted False Direct Currency Pair Factor More Than One Rate', async () => {
     const expectedConversionResult: SingleNonFixedRateConversionResult = new SingleNonFixedRateConversionResult(
       usdEurMrmEcbIndirectFalseInvertedFalseFactorMoreThanOneRate,
       S_20000,
@@ -699,7 +701,7 @@ describe('Non Fixed Rate -- Inverted Rate conversion default tenant settings', (
     const result: BulkConversionResult<
       ConversionParameterForNonFixedRate,
       SingleNonFixedRateConversionResult
-    > = currencyConverter.convertCurrenciesWithNonFixedRate(
+    > = await currencyConverter.convertCurrenciesWithNonFixedRate(
       [usdEurBConversionParam],
       buildAdapter([
         usdEurMrmEcbIndirectFalseInvertedFalseFactorMoreThanOneRate,

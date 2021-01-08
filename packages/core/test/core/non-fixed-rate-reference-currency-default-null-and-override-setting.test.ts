@@ -13,6 +13,7 @@ import {
   TenantSettings
 } from '@sap-cloud-sdk/currency-conversion-models';
 import { CurrencyConverter } from '../../src/core/currency-converter';
+import { ConversionError } from '../../src/constants/conversion-error';
 
 const TENANT_ID: Tenant = { id: 'TenantID' };
 
@@ -620,26 +621,27 @@ function buildAdapter(exchangeRates: ExchangeRate[]): DataAdapter {
     params: ConversionParameterForNonFixedRate[],
     tenant: Tenant,
     tenantSettings: TenantSettings
-  ): ExchangeRate[] => exchangeRates;
+  ): Promise<ExchangeRate[]> => Promise.resolve(exchangeRates);
 
-  adapter.getDefaultSettingsForTenant = (tenant: Tenant): TenantSettings => null as any;
+  adapter.getDefaultSettingsForTenant = (tenant: Tenant): Promise<TenantSettings> => Promise.resolve(null as any);
+
   adapter.getExchangeRateTypeDetailsForTenant = (
     tenant: Tenant,
-    rateTypeSet: Set<string>
-  ): Map<string, ExchangeRateTypeDetail> => {
+    rateTypeSet: string[]
+  ): Promise<Map<string, ExchangeRateTypeDetail>> => {
     const exchangeRate: Map<string, ExchangeRateTypeDetail> = new Map();
     exchangeRate.set(A, new ExchangeRateTypeDetail(buildCurrency('INR'), true));
     exchangeRate.set(LAST, new ExchangeRateTypeDetail(buildCurrency('AFN'), true));
     exchangeRate.set(ASK, new ExchangeRateTypeDetail(null as any, false));
-    return exchangeRate;
+    return Promise.resolve(exchangeRate);
   };
   return adapter;
 }
 
 // eslint-disable-next-line max-len
 describe('Non Fixed Rate Currency Conversion -- Reference currency Tests default null and override tenant settings.', () => {
-  it('Test Single Conversion With Reference Currency.', () => {
-    const result: SingleNonFixedRateConversionResult = currencyConverter.convertCurrencyWithNonFixedRate(
+  it('Test Single Conversion With Reference Currency.', async () => {
+    const result: SingleNonFixedRateConversionResult = await currencyConverter.convertCurrencyWithNonFixedRate(
       eurUsdAConversionParam,
       buildAdapter([eurInrMrmThrARate, usdInrMrmThrARate, eurInrMrmEcbARate, usdInrMrmEcbARate]),
       TENANT_ID,
@@ -652,15 +654,15 @@ describe('Non Fixed Rate Currency Conversion -- Reference currency Tests default
     expect(result.exchangeRate.toCurrency.currencyCode).toBe('USD');
   });
 
-  it('Test Bulk Conversion With Reference Currency.', () => {
-    const result: SingleNonFixedRateConversionResult = currencyConverter
-      .convertCurrenciesWithNonFixedRate(
+  it('Test Bulk Conversion With Reference Currency.', async () => {
+    const result: SingleNonFixedRateConversionResult = (
+      await currencyConverter.convertCurrenciesWithNonFixedRate(
         Array.of(eurUsdAConversionParam),
         buildAdapter([eurInrMrmThrARate, usdInrMrmThrARate, eurInrMrmEcbARate, usdInrMrmEcbARate]),
         TENANT_ID,
         overrideTenantSettings
       )
-      .get(eurUsdAConversionParam) as SingleNonFixedRateConversionResult;
+    ).get(eurUsdAConversionParam) as SingleNonFixedRateConversionResult;
     expect(result).toBeTruthy();
     expect(result.convertedAmount.valueString).toBe('50');
     expect(result.exchangeRate.ratesDataSource).toBe('THR');
@@ -668,52 +670,52 @@ describe('Non Fixed Rate Currency Conversion -- Reference currency Tests default
     expect(result.exchangeRate.toCurrency.currencyCode).toBe('USD');
   });
 
-  it('Test Conversion Reference Currency And Inversion Null', () => {
-    expect(() =>
+  it('Test Conversion Reference Currency And Inversion Null', async () => {
+    await expect(
       currencyConverter.convertCurrencyWithNonFixedRate(
         eurUsdAskConversionParam,
         buildAdapter([eurInrMrmThrAskRate, usdInrMrmThrAskRate, eurInrMrmEcbAskRate, usdInrMrmEcbAskRate]),
         TENANT_ID,
         overrideTenantSettings
       )
-    ).toThrowError(CurrencyConversionError);
+    ).rejects.toThrow(ConversionError.NO_MATCHING_EXCHANGE_RATE_RECORD);
   });
 
-  it('Test Reference Currency With Exchange Rate Record Having Future Date', () => {
-    expect(() =>
+  it('Test Reference Currency With Exchange Rate Record Having Future Date', async () => {
+    await expect(
       currencyConverter.convertCurrencyWithNonFixedRate(
         eurUsdAConversionParamPastDate,
         buildAdapter([usdInrMrmThrARate, eurInrMrmThrARate, usdInrMrmEcbARate, eurInrMrmEcbARate]),
         TENANT_ID,
         overrideTenantSettings
       )
-    ).toThrowError(CurrencyConversionError);
+    ).rejects.toThrowError(CurrencyConversionError);
   });
 
-  it('Test Conversion With Non-Existing Reference Currency', () => {
-    expect(() =>
+  it('Test Conversion With Non-Existing Reference Currency', async () => {
+    await expect(
       currencyConverter.convertCurrencyWithNonFixedRate(
         eurUsdLastConversionParam,
         buildAdapter([usdInrMrmThrLastRate, eurInrMrmThrLastRate, usdInrMrmEcbLastRate, eurInrMrmEcbLastRate]),
         TENANT_ID,
         overrideTenantSettings
       )
-    ).toThrowError(CurrencyConversionError);
+    ).rejects.toThrowError(CurrencyConversionError);
   });
 
-  it('Test Reference Currency With Non-Existing RateType', () => {
-    expect(() =>
+  it('Test Reference Currency With Non-Existing RateType', async () => {
+    await expect(
       currencyConverter.convertCurrencyWithNonFixedRate(
         eurUsdNewConversionParam,
         buildAdapter([usdInrMrmEcbLastRate, eurInrMrmEcbLastRate, usdInrMrmThrLastRate, eurInrMrmThrLastRate]),
         TENANT_ID,
         overrideTenantSettings
       )
-    ).toThrowError(CurrencyConversionError);
+    ).rejects.toThrowError(CurrencyConversionError);
   });
 
-  it('Test Reference Currency With Direct Rate No From Reference Pair', () => {
-    const result = currencyConverter.convertCurrencyWithNonFixedRate(
+  it('Test Reference Currency With Direct Rate No From Reference Pair', async () => {
+    const result = await currencyConverter.convertCurrencyWithNonFixedRate(
       eurUsdAConversionParam,
       buildAdapter([
         usdInrMrmThrARate,
@@ -732,9 +734,9 @@ describe('Non Fixed Rate Currency Conversion -- Reference currency Tests default
     expect(result.exchangeRate).toMatchObject(eurUsdMrmThrIndirectFalseRate);
   });
 
-  it('Test Reference Currency With Direct Rate No To Reference Pair', () => {
-    const result = currencyConverter
-      .convertCurrenciesWithNonFixedRate(
+  it('Test Reference Currency With Direct Rate No To Reference Pair', async () => {
+    const result = (
+      await currencyConverter.convertCurrenciesWithNonFixedRate(
         Array.of(eurUsdAConversionParam),
         buildAdapter([
           eurInrMrmThrARate,
@@ -747,15 +749,15 @@ describe('Non Fixed Rate Currency Conversion -- Reference currency Tests default
         TENANT_ID,
         overrideTenantSettings
       )
-      .get(eurUsdAConversionParam) as SingleNonFixedRateConversionResult;
+    ).get(eurUsdAConversionParam) as SingleNonFixedRateConversionResult;
     expect(result).toBeTruthy();
     expect(result.convertedAmount.valueString).toBe('200');
     expect(result.roundedOffConvertedAmount.valueString).toBe('200');
     expect(result.exchangeRate).toMatchObject(eurUsdMrmThrIndirectFalseRate);
   });
 
-  it('Test Reference Currency With Direct Rate No From And To Reference Pair', () => {
-    const result = currencyConverter.convertCurrencyWithNonFixedRate(
+  it('Test Reference Currency With Direct Rate No From And To Reference Pair', async () => {
+    const result = await currencyConverter.convertCurrencyWithNonFixedRate(
       eurUsdAConversionParam,
       buildAdapter([
         eurUsdMrmThrIndirectTrueRate,
@@ -772,8 +774,8 @@ describe('Non Fixed Rate Currency Conversion -- Reference currency Tests default
     expect(result.exchangeRate).toMatchObject(eurUsdMrmThrIndirectFalseRate);
   });
 
-  it('Test Reference Currency Duplicate From Reference Pair', () => {
-    expect(() =>
+  it('Test Reference Currency Duplicate From Reference Pair', async () => {
+    await expect(
       currencyConverter.convertCurrencyWithNonFixedRate(
         eurUsdAConversionParam,
         buildAdapter([
@@ -791,11 +793,11 @@ describe('Non Fixed Rate Currency Conversion -- Reference currency Tests default
         TENANT_ID,
         overrideTenantSettings
       )
-    ).toThrowError(CurrencyConversionError);
+    ).rejects.toThrowError(CurrencyConversionError);
   });
 
-  it('Test Reference Currency Duplicate To Reference Pair', () => {
-    expect(() =>
+  it('Test Reference Currency Duplicate To Reference Pair', async () => {
+    await expect(
       currencyConverter.convertCurrencyWithNonFixedRate(
         eurUsdAConversionParam,
         buildAdapter([
@@ -813,11 +815,11 @@ describe('Non Fixed Rate Currency Conversion -- Reference currency Tests default
         TENANT_ID,
         overrideTenantSettings
       )
-    ).toThrowError(CurrencyConversionError);
+    ).rejects.toThrowError(CurrencyConversionError);
   });
 
-  it('Test Reference Currency Duplicate From And To Reference Pair.', () => {
-    expect(() =>
+  it('Test Reference Currency Duplicate From And To Reference Pair.', async () => {
+    await expect(
       currencyConverter.convertCurrencyWithNonFixedRate(
         eurUsdAConversionParam,
         buildAdapter([
@@ -837,11 +839,11 @@ describe('Non Fixed Rate Currency Conversion -- Reference currency Tests default
         TENANT_ID,
         overrideTenantSettings
       )
-    ).toThrowError(CurrencyConversionError);
+    ).rejects.toThrowError(CurrencyConversionError);
   });
 
-  it('Test Reference Currency From Indirect To Indirect', () => {
-    const result = currencyConverter.convertCurrencyWithNonFixedRate(
+  it('Test Reference Currency From Indirect To Indirect', async () => {
+    const result = await currencyConverter.convertCurrencyWithNonFixedRate(
       eurUsdAConversionParam,
       buildAdapter([
         eurInrMrmThrIndirectTrueRate,
@@ -862,8 +864,8 @@ describe('Non Fixed Rate Currency Conversion -- Reference currency Tests default
     expect(result.exchangeRate.toCurrency.currencyCode).toBe('USD');
   });
 
-  it('Test Reference Currency From Indirect To Direct', () => {
-    const result = currencyConverter.convertCurrencyWithNonFixedRate(
+  it('Test Reference Currency From Indirect To Direct', async () => {
+    const result = await currencyConverter.convertCurrencyWithNonFixedRate(
       eurUsdAConversionParam,
       buildAdapter([
         eurInrMrmThrIndirectTrueRate,
@@ -884,8 +886,8 @@ describe('Non Fixed Rate Currency Conversion -- Reference currency Tests default
     expect(result.exchangeRate.toCurrency.currencyCode).toBe('USD');
   });
 
-  it('Test Reference Currency From Direct To Indirect', () => {
-    const result = currencyConverter.convertCurrencyWithNonFixedRate(
+  it('Test Reference Currency From Direct To Indirect', async () => {
+    const result = await currencyConverter.convertCurrencyWithNonFixedRate(
       eurUsdAConversionParam,
       buildAdapter([
         eurInrMrmThrIndirectFalseRate,
@@ -906,8 +908,8 @@ describe('Non Fixed Rate Currency Conversion -- Reference currency Tests default
     expect(result.exchangeRate.toCurrency.currencyCode).toBe('USD');
   });
 
-  it('Test Reference Currency From Direct To Direct', () => {
-    const result = currencyConverter.convertCurrencyWithNonFixedRate(
+  it('Test Reference Currency From Direct To Direct', async () => {
+    const result = await currencyConverter.convertCurrencyWithNonFixedRate(
       eurUsdAConversionParam,
       buildAdapter([
         eurInrMrmThrIndirectFalseRate,
@@ -928,8 +930,8 @@ describe('Non Fixed Rate Currency Conversion -- Reference currency Tests default
     expect(result.exchangeRate.toCurrency.currencyCode).toBe('USD');
   });
 
-  it('Test Reference Currency From Indirect To Indirect Factor More Than One', () => {
-    const result = currencyConverter.convertCurrencyWithNonFixedRate(
+  it('Test Reference Currency From Indirect To Indirect Factor More Than One', async () => {
+    const result = await currencyConverter.convertCurrencyWithNonFixedRate(
       eurUsdAConversionParam,
       buildAdapter([
         eurInrMrmThrIndirectTrueFactorMoreThanOneRate,
@@ -950,8 +952,8 @@ describe('Non Fixed Rate Currency Conversion -- Reference currency Tests default
     expect(result.exchangeRate.toCurrency.currencyCode).toBe('USD');
   });
 
-  it('Test Reference Currency From Indirect To Direct Factor More Than One', () => {
-    const result = currencyConverter.convertCurrencyWithNonFixedRate(
+  it('Test Reference Currency From Indirect To Direct Factor More Than One', async () => {
+    const result = await currencyConverter.convertCurrencyWithNonFixedRate(
       eurUsdAConversionParam,
       buildAdapter([
         eurInrMrmThrIndirectTrueFactorMoreThanOneRate,
@@ -972,8 +974,8 @@ describe('Non Fixed Rate Currency Conversion -- Reference currency Tests default
     expect(result.exchangeRate.toCurrency.currencyCode).toBe('USD');
   });
 
-  it('Test Reference Currency From Direct To Indirect Factor More Than One.', () => {
-    const result = currencyConverter.convertCurrencyWithNonFixedRate(
+  it('Test Reference Currency From Direct To Indirect Factor More Than One.', async () => {
+    const result = await currencyConverter.convertCurrencyWithNonFixedRate(
       eurUsdAConversionParam,
       buildAdapter([
         eurInrMrmThrIndirectFalseFactorMoreThanOneRate,
@@ -994,8 +996,8 @@ describe('Non Fixed Rate Currency Conversion -- Reference currency Tests default
     expect(result.exchangeRate.toCurrency.currencyCode).toBe('USD');
   });
 
-  it('Test Reference Currency From Direct To Direct Factor More Than One.', () => {
-    const result = currencyConverter.convertCurrencyWithNonFixedRate(
+  it('Test Reference Currency From Direct To Direct Factor More Than One.', async () => {
+    const result = await currencyConverter.convertCurrencyWithNonFixedRate(
       eurUsdAConversionParam,
       buildAdapter([
         eurInrMrmThrIndirectFalseFactorMoreThanOneRate,

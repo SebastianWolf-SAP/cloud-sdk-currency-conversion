@@ -3,7 +3,8 @@
   "sideEffects": false,
   "workspaces": [
     "packages/core",
-    "packages/models"
+    "packages/models",
+    "packages/adapter"
   ],
   "dependencies": {
     "lerna": "^3.22.1"
@@ -36,9 +37,13 @@
     "core:test": "yarn core test",
     "core:prepare": "yarn core prepare",
     "model:prepare": "yarn models prepare",
-    "core": "yarn workpace @sap-cloud-sdk/currency-conversion-core",
-    "models": "yarn workpace @sap-cloud-sdk/currency-conversion-models",
+    "adapter:prepare": "yarn adapter prepare",
+    "core": "yarn workspace @sap-cloud-sdk/currency-conversion-core",
+    "models": "yarn workspace @sap-cloud-sdk/currency-conversion-models",
+    "adapter": "yarn workspace @sap-cloud-sdk/currency-conversion-data-adapter",
     "compile": "yarn lerna run compile",
+    "adapter:lint": "yarn adapter lint",
+    "adapter:lint:fix": "yarn adapter lint --fix",
     "lint": "yarn eslint --ext .ts .",
     "lint:fix": "yarn lint --fix",
     "lint:fix-cached": "yarn lint:fix --cache"

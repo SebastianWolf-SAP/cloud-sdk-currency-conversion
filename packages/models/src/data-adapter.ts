@@ -37,7 +37,7 @@ export interface DataAdapter {
     conversionParameters: ConversionParameterForNonFixedRate[],
     tenant: Tenant,
     tenantSettings: TenantSettings
-  ): ExchangeRate[];
+  ): Promise<ExchangeRate[]>;
 
   /**
    * Returns the default {@link TenantSettings} associated with a
@@ -49,8 +49,7 @@ export interface DataAdapter {
    * @return The default {@link TenantSettings} for the given {@link Tenant}.
    *
    */
-  getDefaultSettingsForTenant(tenant: Tenant): TenantSettings;
-
+  getDefaultSettingsForTenant(tenant: Tenant): Promise<TenantSettings>;
   /**
    * Returns the {@link Map} of the {@link ExchangeRateTypeDetail} with
    * the {@link RateType} as the key for a given
@@ -62,13 +61,16 @@ export interface DataAdapter {
    * @param tenant
    *            The {@link Tenant} for which the exchange rate type details
    *            is requested.
-   * @param rateTypeSet
-   *            The {@link Set} of {@link RateType} used to fetch the relevant
+   * @param rateTypes
+   *            The {@link Array} of {@link String} used to fetch the relevant
    *            exchange rate type details.
    *
    * @return The {@link Map} of the {@link ExchangeRateTypeDetail} with the
    *         {@link RateType} as the key.
    *
    */
-  getExchangeRateTypeDetailsForTenant(tenant: Tenant, rateTypeSet: Set<string>): Map<string, ExchangeRateTypeDetail>;
+  getExchangeRateTypeDetailsForTenant(
+    tenant: Tenant,
+    rateTypes: string[]
+  ): Promise<Map<string, ExchangeRateTypeDetail>>;
 }
