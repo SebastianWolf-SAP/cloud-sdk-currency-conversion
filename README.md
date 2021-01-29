@@ -51,9 +51,9 @@ npm install @sap-cloud-sdk/currency-conversion-core, @sap-cloud-sdk/currency-con
 
 The following code examples show the various usages of the library:
 
-- [Direct Conversion](https://github.com/sap-staging/cloud-sdk-currency-conversion/tree/open-source-documentation/packages/core#usage)
+- [Direct Conversion](packages/core#usage)
 
-- [Non-Fixed Rate Conversion](https://github.com/sap-staging/cloud-sdk-currency-conversion/tree/open-source-documentation/packages/adapter#usage)
+- [Non-Fixed Rate Conversion](packages/adapter#usage)
 
 ## How to obtain support
 
