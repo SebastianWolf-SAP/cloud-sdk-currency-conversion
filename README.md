@@ -16,6 +16,7 @@ The library provides the following modules:
 - [Core](packages/core/)
 - [Adapter](packages/adapter/)
 - [Models](packages/models/)
+- [Integration Objects](packages/integration-objects)
 
 ## Features
 
@@ -25,7 +26,7 @@ Get currency exchange rates converted from a source currency to a target currenc
 
 #### Get Bulk Conversions
 
-Get multiple currency pairs converted through a single call. You can use the library methods to get more than one currency pair converted simultaneously. 
+Multiple currency pairs can be converted through a single call. You can use the library methods to get more than one currency pair converted simultaneously.
 
 #### Get Direct and Indirect Conversions
 
@@ -44,7 +45,7 @@ The currency conversion library requires:
 Install the currency conversion library using npm:
 
 ```bash
-npm install @sap-cloud-sdk/currency-conversion-core, @sap-cloud-sdk/currency-conversion-data-adapter, @sap-cloud-sdk/currency-conversion-models
+npm install @sap-cloud-sdk/currency-conversion-core, @sap-cloud-sdk/currency-conversion-data-adapter, @sap-cloud-sdk/currency-conversion-models, @sap-cloud-sdk/currency-conversion-integration-objects
 ```
 
 ## Usage
