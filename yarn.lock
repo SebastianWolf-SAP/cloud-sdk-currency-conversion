@@ -1608,9 +1608,9 @@
     debug "3.1.0"
 
 "@sap/hdi-deploy@^4":
-  version "4.0.2"
-  resolved "https://registry.yarnpkg.com/@sap/hdi-deploy/-/hdi-deploy-4.0.2.tgz#17cf8114d701e2ffec90c14b93b49719efc6ff02"
-  integrity sha512-EZ6q6rz25GcRYZMKWy9ANvlibFIONgzMdO8EqbZuq1o0RK2VzIeygctMm8kwNlE6t+q0x2a8yVQ9hAi+c7mP5g==
+  version "4.0.3"
+  resolved "https://registry.yarnpkg.com/@sap/hdi-deploy/-/hdi-deploy-4.0.3.tgz#bb5778edf351775ca16fa66e509a5f2147fa1297"
+  integrity sha512-oHA0xKr5/XI7VxmiqZW5/5TT9QlTOJ5x51DfKTUxTqlTM23zUfDe1eBLuAcsSzOEGOqewe1IHwUd/vJn6AKQ3Q==
   dependencies:
     "@sap/hana-client" "2.7.21"
     "@sap/hdi" "3.0.2"
