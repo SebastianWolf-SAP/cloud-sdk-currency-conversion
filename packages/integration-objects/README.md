@@ -44,10 +44,10 @@ In a reference application, a typical package.json to consume Integration Object
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@sap-cloud-sdk/currency-conversion-core": "0.0.1",
-    "@sap-cloud-sdk/currency-conversion-models": "0.0.1",
-    "@sap-cloud-sdk/currency-conversion-data-adapter": "0.0.1",
-    "@sap-cloud-sdk/currency-conversion-integration-objects": "0.0.1"
+    "@sap-cloud-sdk/currency-conversion-core": "0.1.0",
+    "@sap-cloud-sdk/currency-conversion-models": "0.1.0",
+    "@sap-cloud-sdk/currency-conversion-data-adapter": "0.1.0",
+    "@sap-cloud-sdk/currency-conversion-integration-objects": "0.1.0"
   }
 }
 
