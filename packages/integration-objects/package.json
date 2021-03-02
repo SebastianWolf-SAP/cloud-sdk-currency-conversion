@@ -30,9 +30,9 @@
     "build/**/*",
     "cds-security.json"
   ],
-  "publishConfig": {​​​​​​​
+  "publishConfig": {
     "access": "public"
-  }​​​​​​​,
+  },
   "author": "SAP",
   "license": "Apache-2.0"
 }

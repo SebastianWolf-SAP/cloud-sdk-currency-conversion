@@ -20,9 +20,9 @@
     "build/**/*.json",
     "build/**/*.ts"
   ],
-  "publishConfig": {​​​​​​​
+  "publishConfig": {
     "access": "public"
-  }​​​​​​​,
+  },
   "author": "SAP",
   "license": "Apache-2.0",
   "types": "build/index.d.ts",
