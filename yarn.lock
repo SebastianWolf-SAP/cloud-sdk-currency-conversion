@@ -1586,12 +1586,20 @@
     "@sap/hana-client" "2.7.21"
     async "3.1.0"
 
-"@sap/xsenv@3.1.0", "@sap/xsenv@^3.0.0":
+"@sap/xsenv@3.1.0":
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/@sap/xsenv/-/xsenv-3.1.0.tgz#86cf4a5229c7f3d3b4425aa1fab674cf8505051e"
   integrity sha512-Z+fwO13tcad+eoe8iTrbR471OacU754puabhRn8OI1MU2pPebDQu8rcHN7sR9JQinh4dSs953WkbDneOmvCWuA==
   dependencies:
     debug "3.1.0"
+    verror "1.10.0"
+
+"@sap/xsenv@3.1.1", "@sap/xsenv@^3.0.0":
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/@sap/xsenv/-/xsenv-3.1.1.tgz#8c65144fb256dd95a65b2b3d6382a0b5ac5d4833"
+  integrity sha512-7UOnJNRdvb6d+LqgLf0qZLtcG18Fo7ZquxaQ5Pk33wGtpB0pTDCuV7z7JgAv2QTLx4aqtxTI435YFwa4kCnWzA==
+  dependencies:
+    debug "4.2.0"
     verror "1.10.0"
 
 "@sap/xssec@^3":
